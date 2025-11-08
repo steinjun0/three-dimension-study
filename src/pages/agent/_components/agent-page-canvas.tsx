@@ -1,17 +1,39 @@
-import { OrbitControls, Sky, useKeyboardControls } from "@react-three/drei";
+import { OrbitControls, useKeyboardControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
-import { Physics, RigidBody } from "@react-three/rapier";
+import { Physics, RapierRigidBody, RigidBody } from "@react-three/rapier";
+
+import { useRef } from "react";
+import { parseBidirectionalInput } from "../../../utils/keyboard/parse-birdrecional-input";
+import type { BasicMoveKeyboardControlInputs } from "../../../utils/keyboard/basic-move-keyboard-control-inputs";
 
 export const AgentPageCanvas = () => {
   const { camera } = useThree();
-  const [, get] = useKeyboardControls();
+  const [, get] = useKeyboardControls<BasicMoveKeyboardControlInputs>();
 
   camera.lookAt(0, 0, 0);
   camera.position.set(0, 100, 0);
 
+  const agent = useRef<RapierRigidBody>(null);
+
   useFrame(() => {
     const { up, down, left, right } = get();
-    console.log(up, down, left, right);
+
+    const agentBody = agent.current;
+
+    if (agentBody) {
+      agentBody.setTranslation(
+        {
+          x:
+            agentBody.translation().x +
+            parseBidirectionalInput({ negative: left, positive: right }),
+          y: 0,
+          z:
+            agentBody.translation().z +
+            parseBidirectionalInput({ negative: up, positive: down }),
+        },
+        true
+      );
+    }
   });
 
   return (
@@ -35,7 +57,7 @@ export const AgentPageCanvas = () => {
         </RigidBody>
 
         {/* agent */}
-        <RigidBody position={[0, 30, 0]}>
+        <RigidBody position={[0, 30, 0]} ref={agent}>
           <mesh>
             <meshStandardMaterial color={"orange"} />
             <sphereGeometry args={[1, 32, 16]} />

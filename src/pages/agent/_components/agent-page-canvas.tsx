@@ -42,11 +42,11 @@ export const AgentPageCanvas = () => {
       enemyRefs.current.forEach((enemyBody) => {
         if (enemyBody) {
           const currentEnemyTranslation = enemyBody.translation();
-          const diff = {
-            x: currentAgentTranslation.x - currentEnemyTranslation.x,
-            y: 0,
-            z: currentAgentTranslation.z - currentEnemyTranslation.z,
-          };
+          const diff = new THREE.Vector3(
+            currentAgentTranslation.x - currentEnemyTranslation.x,
+            0,
+            currentAgentTranslation.z - currentEnemyTranslation.z
+          ).multiplyScalar(0.1);
           enemyBody.applyImpulse(diff, true);
 
           console.log(currentAgentTranslation, currentEnemyTranslation, diff);
@@ -103,7 +103,7 @@ export const AgentPageCanvas = () => {
         </RigidBody>
 
         {/* agent */}
-        <RigidBody position={[0, 30, 0]} ref={agent} type="fixed">
+        <RigidBody position={[0, 30, 0]} ref={agent} type="kinematicPosition">
           <mesh>
             <meshStandardMaterial color={"orange"} />
             <sphereGeometry args={[1, 32, 16]} />
@@ -117,11 +117,13 @@ export const AgentPageCanvas = () => {
               <RigidBody
                 position={[
                   Math.floor(index / 50) * 10 - 50,
-                  10,
+                  0,
                   (index % 50) * 4 - 25,
                 ]}
                 key={index}
                 ref={(el) => setEnemyRef(el, index)}
+                /** 속도가 너무 빨라지지 않도록 선형 감속 추가(물체 속도에 반비례 하여 늦추는 힘 추가) */
+                linearDamping={0.1}
               >
                 <mesh
                 /**

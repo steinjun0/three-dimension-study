@@ -6,6 +6,8 @@ import { useRef } from "react";
 import type { BasicMoveKeyboardControlInputs } from "../../../utils/keyboard/basic-move-keyboard-control-inputs";
 import { parseBidirectionalInput } from "../../../utils/keyboard/parse-birdrecional-input";
 
+import * as THREE from "three";
+
 const ENEMIES_COUNT = 100;
 
 export const AgentPageCanvas = () => {
@@ -24,6 +26,10 @@ export const AgentPageCanvas = () => {
     }
   };
 
+  const tempQuaternion = new THREE.Quaternion();
+  const tempVector = new THREE.Vector3();
+  const enemyTargetVector = new THREE.Vector3(); // 회전 방향을 저장할 임시 벡터
+
   useFrame(() => {
     const { up, down, left, right } = get();
 
@@ -33,16 +39,27 @@ export const AgentPageCanvas = () => {
       const currentAgentTranslation = agentBody.translation();
 
       //
-      enemyRefs.current.forEach((enemyBody, index) => {
+      enemyRefs.current.forEach((enemyBody) => {
         if (enemyBody) {
-          // 1. 현재 위치 가져오기
           const currentEnemyTranslation = enemyBody.translation();
           const diff = {
-            x: (currentAgentTranslation.x - currentEnemyTranslation.x) * 0.1,
+            x: currentAgentTranslation.x - currentEnemyTranslation.x,
             y: 0,
-            z: (currentAgentTranslation.z - currentEnemyTranslation.z) * 0.1,
+            z: currentAgentTranslation.z - currentEnemyTranslation.z,
           };
           enemyBody.applyImpulse(diff, true);
+
+          console.log(currentAgentTranslation, currentEnemyTranslation, diff);
+
+          // 내적을 이용해 각도를 계산하기 때문에, normalize해줘야함.
+          // (normalize안하면 각도가 작은건지, 길이가 긴건지 알 수 없음)
+          enemyTargetVector.set(diff.x, 0, diff.z).normalize();
+
+          tempVector.set(0, 0, 1); // 최초 enemy들이 정의되어 있는 방향
+          tempQuaternion.setFromUnitVectors(tempVector, enemyTargetVector);
+
+          // 4. RigidBody에 쿼터니언 적용 (적 회전)
+          enemyBody.setRotation(tempQuaternion, true);
         }
       });
 
@@ -66,6 +83,7 @@ export const AgentPageCanvas = () => {
 
   return (
     <mesh>
+      <OrbitControls />
       <ambientLight intensity={0.5} />
       <directionalLight
         position={[10, 10, 10]}
@@ -77,7 +95,7 @@ export const AgentPageCanvas = () => {
 
       <Physics gravity={[0, -9.8, 0]}>
         {/* ground */}
-        <RigidBody type="fixed" position={[0, 0, 0]}>
+        <RigidBody type="fixed" position={[0, -1, 0]}>
           <mesh>
             <meshStandardMaterial color="grey" />
             <boxGeometry args={[1000, 1, 1000]} />
@@ -96,15 +114,25 @@ export const AgentPageCanvas = () => {
         <group>
           {new Array(ENEMIES_COUNT).fill(null).map((_, index) => {
             return (
-              <RigidBody key={index} ref={(el) => setEnemyRef(el, index)}>
+              <RigidBody
+                position={[
+                  Math.floor(index / 50) * 10 - 50,
+                  10,
+                  (index % 50) * 4 - 25,
+                ]}
+                key={index}
+                ref={(el) => setEnemyRef(el, index)}
+              >
                 <mesh
-                  position={[
-                    Math.floor(index / 10) * 10 - 50,
-                    10,
-                    (index % 10) * 4 - 25,
-                  ]}
+                /**
+                 * @note
+                 * 지금 rigidBody의 position을 잡기 때문에
+                 * 여기에 position을 설정하면
+                 * rigidBody의 tranlsation은 [0, 0, 0]이고,
+                 * mesh의 위치만 바뀐것으로 해석된다
+                 */
                 >
-                  <boxGeometry args={[5, 1, 2]} />
+                  <boxGeometry args={[2, 1, 5]} />
                   <meshStandardMaterial color={"white"} />
                 </mesh>
               </RigidBody>
@@ -112,8 +140,6 @@ export const AgentPageCanvas = () => {
           })}
         </group>
       </Physics>
-
-      <OrbitControls enabled={false} />
     </mesh>
   );
 };

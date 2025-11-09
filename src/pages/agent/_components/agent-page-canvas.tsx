@@ -69,15 +69,15 @@ export const AgentPageCanvas = () => {
 
       const isAboveGround = currentAgentTranslation.y > -1;
       if (isAboveGround && (up || down || left || right)) {
-        agentBody.setTranslation(
+        agentBody.applyImpulse(
           {
             x:
-              currentAgentTranslation.x +
-              parseBidirectionalInput({ negative: left, positive: right }),
+              // currentAgentTranslation.x +
+              parseBidirectionalInput({ negative: left, positive: right }) * 10,
             y: 0,
             z:
-              currentAgentTranslation.z +
-              parseBidirectionalInput({ negative: up, positive: down }),
+              // currentAgentTranslation.z +
+              parseBidirectionalInput({ negative: up, positive: down }) * 10,
           },
           true
         );
@@ -107,7 +107,7 @@ export const AgentPageCanvas = () => {
         </RigidBody>
 
         {/* agent */}
-        <RigidBody position={[0, 1, 0]} ref={agent} type="kinematicPosition">
+        <RigidBody position={[0, 1, 0]} ref={agent} linearDamping={1}>
           <mesh>
             <meshStandardMaterial color={"orange"} />
             <sphereGeometry args={[1, 32, 16]} />

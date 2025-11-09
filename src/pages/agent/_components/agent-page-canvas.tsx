@@ -28,7 +28,12 @@ export const AgentPageCanvas = () => {
 
   const tempQuaternion = new THREE.Quaternion();
   const tempVector = new THREE.Vector3();
-  const enemyTargetVector = new THREE.Vector3(); // 회전 방향을 저장할 임시 벡터
+  const enemyTargetVector = new THREE.Vector3();
+
+  // 격자 배치 상수
+  const GRID_SIZE = 10;
+  const SPACING = 50;
+  const START_POS = (GRID_SIZE * SPACING) / 2 - SPACING / 2;
 
   useFrame(() => {
     const { up, down, left, right } = get();
@@ -46,9 +51,8 @@ export const AgentPageCanvas = () => {
             currentAgentTranslation.x - currentEnemyTranslation.x,
             0,
             currentAgentTranslation.z - currentEnemyTranslation.z
-          ).multiplyScalar(0.1);
+          ).multiplyScalar(0.5); // 임펄스 값은 조금 낮춤
           enemyBody.applyImpulse(diff, true);
-
           console.log(currentAgentTranslation, currentEnemyTranslation, diff);
 
           // 내적을 이용해 각도를 계산하기 때문에, normalize해줘야함.
@@ -103,7 +107,7 @@ export const AgentPageCanvas = () => {
         </RigidBody>
 
         {/* agent */}
-        <RigidBody position={[0, 30, 0]} ref={agent} type="kinematicPosition">
+        <RigidBody position={[0, 1, 0]} ref={agent} type="kinematicPosition">
           <mesh>
             <meshStandardMaterial color={"orange"} />
             <sphereGeometry args={[1, 32, 16]} />
@@ -113,17 +117,21 @@ export const AgentPageCanvas = () => {
         {/* enemies */}
         <group>
           {new Array(ENEMIES_COUNT).fill(null).map((_, index) => {
+            const xIndex = index % GRID_SIZE;
+            const zIndex = Math.floor(index / GRID_SIZE);
+
             return (
               <RigidBody
                 position={[
-                  Math.floor(index / 50) * 10 - 50,
-                  0,
-                  (index % 50) * 4 - 25,
+                  // ⭐ 격자 형태로 넓게 분산 배치
+                  xIndex * SPACING - START_POS,
+                  0, // 바닥 바로 위
+                  zIndex * SPACING - START_POS,
                 ]}
                 key={index}
                 ref={(el) => setEnemyRef(el, index)}
                 /** 속도가 너무 빨라지지 않도록 선형 감속 추가(물체 속도에 반비례 하여 늦추는 힘 추가) */
-                linearDamping={0.1}
+                linearDamping={1}
               >
                 <mesh
                 /**

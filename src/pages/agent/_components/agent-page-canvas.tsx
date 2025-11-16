@@ -8,7 +8,7 @@ import { parseBidirectionalInput } from "../../../utils/keyboard/parse-birdrecio
 
 import * as THREE from "three";
 
-const ENEMIES_COUNT = 100;
+const ENEMIES_COUNT = 300;
 
 export const AgentPageCanvas = () => {
   const { camera } = useThree();
@@ -41,23 +41,62 @@ export const AgentPageCanvas = () => {
     const agentBody = agent.current;
 
     if (agentBody) {
-      const currentAgentTranslation = agentBody.translation();
+      const currentAgentTranslation = new THREE.Vector3(
+        agentBody.translation().x,
+        0,
+        agentBody.translation().z
+      );
 
       //
       enemyRefs.current.forEach((enemyBody) => {
         if (enemyBody) {
-          const currentEnemyTranslation = enemyBody.translation();
-          const diff = new THREE.Vector3(
+          const currentEnemyTranslation = new THREE.Vector3(
+            enemyBody.translation().x,
+            0,
+            enemyBody.translation().z
+          );
+
+          // target까지 달려드는 vector
+          const agentDiff = new THREE.Vector3(
             currentAgentTranslation.x - currentEnemyTranslation.x,
             0,
             currentAgentTranslation.z - currentEnemyTranslation.z
-          ).multiplyScalar(0.5); // 임펄스 값은 조금 낮춤
-          enemyBody.applyImpulse(diff, true);
-          console.log(currentAgentTranslation, currentEnemyTranslation, diff);
+          ).multiplyScalar(1); // 임펄스 값은 조금 낮춤
+
+          // enemy들끼리 멀어지는 vector
+          const seperationDiff = new THREE.Vector3(0, 0, 0);
+          enemyRefs.current.forEach((_enemyBody) => {
+            if (_enemyBody == enemyBody || _enemyBody == null) {
+              return;
+            }
+            const otherEnemyBodyTranlation = _enemyBody.translation();
+
+            const otherEnemyDistance = new THREE.Vector3(
+              otherEnemyBodyTranlation.x,
+              0,
+              otherEnemyBodyTranlation.z
+            ).distanceTo(currentEnemyTranslation);
+
+            seperationDiff
+              .add(
+                new THREE.Vector3(
+                  currentEnemyTranslation.x - otherEnemyBodyTranlation.x,
+                  0,
+                  currentEnemyTranslation.z - otherEnemyBodyTranlation.z
+                )
+              )
+              .multiplyScalar(Math.max(10 / otherEnemyDistance, 0.7));
+          });
+
+          const totalDiff = agentDiff.add(
+            seperationDiff.divideScalar(enemyRefs.current.length - 1)
+          );
+
+          enemyBody.applyImpulse(totalDiff, true);
 
           // 내적을 이용해 각도를 계산하기 때문에, normalize해줘야함.
           // (normalize안하면 각도가 작은건지, 길이가 긴건지 알 수 없음)
-          enemyTargetVector.set(diff.x, 0, diff.z).normalize();
+          enemyTargetVector.set(agentDiff.x, 0, agentDiff.z).normalize();
 
           tempVector.set(0, 0, 1); // 최초 enemy들이 정의되어 있는 방향
           tempQuaternion.setFromUnitVectors(tempVector, enemyTargetVector);
@@ -68,16 +107,19 @@ export const AgentPageCanvas = () => {
       });
 
       const isAboveGround = currentAgentTranslation.y > -1;
+      const AGENT_FORCE = 20;
       if (isAboveGround && (up || down || left || right)) {
         agentBody.applyImpulse(
           {
             x:
               // currentAgentTranslation.x +
-              parseBidirectionalInput({ negative: left, positive: right }) * 10,
+              parseBidirectionalInput({ negative: left, positive: right }) *
+              AGENT_FORCE,
             y: 0,
             z:
               // currentAgentTranslation.z +
-              parseBidirectionalInput({ negative: up, positive: down }) * 10,
+              parseBidirectionalInput({ negative: up, positive: down }) *
+              AGENT_FORCE,
           },
           true
         );
@@ -107,7 +149,7 @@ export const AgentPageCanvas = () => {
         </RigidBody>
 
         {/* agent */}
-        <RigidBody position={[0, 1, 0]} ref={agent} linearDamping={1}>
+        <RigidBody position={[0, 0, 0]} ref={agent} linearDamping={1}>
           <mesh>
             <meshStandardMaterial color={"orange"} />
             <sphereGeometry args={[1, 32, 16]} />
@@ -142,7 +184,8 @@ export const AgentPageCanvas = () => {
                  * mesh의 위치만 바뀐것으로 해석된다
                  */
                 >
-                  <boxGeometry args={[2, 1, 5]} />
+                  {/* <boxGeometry args={[2, 1, 5]} /> */}
+                  <sphereGeometry args={[2, 4, 1]} />
                   <meshStandardMaterial color={"white"} />
                 </mesh>
               </RigidBody>

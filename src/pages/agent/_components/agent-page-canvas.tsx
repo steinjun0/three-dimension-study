@@ -8,7 +8,7 @@ import { parseBidirectionalInput } from "../../../utils/keyboard/parse-birdrecio
 
 import * as THREE from "three";
 
-const ENEMIES_COUNT = 300;
+const ENEMIES_COUNT = 100;
 
 export const AgentPageCanvas = () => {
   const { camera } = useThree();
@@ -32,7 +32,7 @@ export const AgentPageCanvas = () => {
 
   // 격자 배치 상수
   const GRID_SIZE = 10;
-  const SPACING = 50;
+  const SPACING = 5;
   const START_POS = (GRID_SIZE * SPACING) / 2 - SPACING / 2;
 
   useFrame(() => {
@@ -46,6 +46,12 @@ export const AgentPageCanvas = () => {
         0,
         agentBody.translation().z
       );
+      camera.position.set(
+        agentBody.translation().x,
+        100,
+        agentBody.translation().z
+      );
+      camera.lookAt(agentBody.translation().x, 0, agentBody.translation().z);
 
       //
       enemyRefs.current.forEach((enemyBody) => {
@@ -107,7 +113,7 @@ export const AgentPageCanvas = () => {
       });
 
       const isAboveGround = currentAgentTranslation.y > -1;
-      const AGENT_FORCE = 20;
+      const AGENT_FORCE = 5;
       if (isAboveGround && (up || down || left || right)) {
         agentBody.applyImpulse(
           {
@@ -129,7 +135,7 @@ export const AgentPageCanvas = () => {
 
   return (
     <mesh>
-      <OrbitControls />
+      {/* <OrbitControls /> */}
       <ambientLight intensity={0.5} />
       <directionalLight
         position={[10, 10, 10]}
@@ -144,12 +150,12 @@ export const AgentPageCanvas = () => {
         <RigidBody type="fixed" position={[0, -1, 0]}>
           <mesh>
             <meshStandardMaterial color="grey" />
-            <boxGeometry args={[1000, 1, 1000]} />
+            <boxGeometry args={[100, 1, 100]} />
           </mesh>
         </RigidBody>
 
         {/* agent */}
-        <RigidBody position={[0, 0, 0]} ref={agent} linearDamping={1}>
+        <RigidBody position={[0, 5, 0]} ref={agent} linearDamping={1}>
           <mesh>
             <meshStandardMaterial color={"orange"} />
             <sphereGeometry args={[1, 32, 16]} />
@@ -173,7 +179,7 @@ export const AgentPageCanvas = () => {
                 key={index}
                 ref={(el) => setEnemyRef(el, index)}
                 /** 속도가 너무 빨라지지 않도록 선형 감속 추가(물체 속도에 반비례 하여 늦추는 힘 추가) */
-                linearDamping={1}
+                linearDamping={0.1}
               >
                 <mesh
                 /**

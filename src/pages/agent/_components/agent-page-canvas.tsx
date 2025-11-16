@@ -98,7 +98,7 @@ export const AgentPageCanvas = () => {
             seperationDiff.divideScalar(enemyRefs.current.length - 1)
           );
 
-          enemyBody.applyImpulse(totalDiff, true);
+          enemyBody.applyImpulse(agentDiff, true);
 
           // 내적을 이용해 각도를 계산하기 때문에, normalize해줘야함.
           // (normalize안하면 각도가 작은건지, 길이가 긴건지 알 수 없음)
@@ -179,7 +179,7 @@ export const AgentPageCanvas = () => {
                 key={index}
                 ref={(el) => setEnemyRef(el, index)}
                 /** 속도가 너무 빨라지지 않도록 선형 감속 추가(물체 속도에 반비례 하여 늦추는 힘 추가) */
-                linearDamping={0.1}
+                linearDamping={0.5}
               >
                 <mesh
                 /**

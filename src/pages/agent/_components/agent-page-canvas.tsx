@@ -1,4 +1,4 @@
-import { OrbitControls, useKeyboardControls } from "@react-three/drei";
+import { useKeyboardControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Physics, RapierRigidBody, RigidBody } from "@react-three/rapier";
 

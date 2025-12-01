@@ -1,12 +1,9 @@
 import "./App.css";
-import { AgentPage } from "./pages/agent/agent";
 
-function App() {
+function App({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <div style={{ width: "100vw", height: "100vh" }}>
-        <AgentPage />
-      </div>
+      <div style={{ width: "100vw", height: "100vh" }}>{children}</div>
     </>
   );
 }

@@ -4,11 +4,12 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import App from "./App.tsx";
 import "./index.css";
 import { SoftBodyPage } from "./pages/soft-body/soft-body.tsx";
+import { AgentPage } from "./pages/agent/agent.tsx";
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <App />,
+    element: <AgentPage />,
   },
   {
     path: "/soft-body",
@@ -18,6 +19,8 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <App>
+      <RouterProvider router={router} />
+    </App>
   </StrictMode>
 );
